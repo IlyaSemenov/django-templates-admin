@@ -7,7 +7,7 @@ This Django app allows to edit Django project template files from within the Dja
 
 setup(
 	name='django-templates-admin',
-	version='0.1.7',
+	version='0.2.0',
 	url='https://github.com/IlyaSemenov/django-templates-admin',
 	license='BSD',
 	author='Ilya Semenov',

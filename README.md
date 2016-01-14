@@ -18,8 +18,7 @@ Add the application to `settings.py`:
 ```python
 INSTALLED_APPS =
     ...
-    'templates_admin.apps.TemplatesAdminConfig',  # Django 1.7+
-    'templates_admin',  # Django 1.6 and earlier
+    'django_templates_admin.templates',
 ```
 
 On the main admin page, a new section **Templates** will appear.

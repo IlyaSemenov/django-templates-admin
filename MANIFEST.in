@@ -1,1 +1,1 @@
-recursive-include templates_admin/templates *.html
+recursive-include django_templates_admin/templates/templates *.html
