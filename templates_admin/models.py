@@ -6,13 +6,16 @@ from django.utils.functional import SimpleLazyObject
 
 
 def _find_templates():
+	if getattr(settings, 'TEMPLATES', None):
+		template_dirs = [d for source in settings.TEMPLATES for d in source.get('DIRS', [])]
+	else:
+		template_dirs = settings.TEMPLATE_DIRS
+
 	templates = []
-	# TODO: make this compatible with old-style settings.TEMPLATE_DIRS
-	for engine in settings.TEMPLATES:
-		for top_dir in engine['DIRS']:
-			for root, dirs, files in os.walk(top_dir):
-				for f in files:
-					templates.append(Template(path=os.path.join(root, f), top_dir=top_dir))
+	for top_dir in template_dirs:
+		for root, dirs, files in os.walk(top_dir):
+			for f in files:
+				templates.append(Template(path=os.path.join(root, f), top_dir=top_dir))
 	return templates
 
 all_templates = SimpleLazyObject(_find_templates)
