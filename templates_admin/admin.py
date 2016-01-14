@@ -24,3 +24,7 @@ class TemplateAdmin(admin.ModelAdmin):
 		template = super().get_object(*args, **kwargs)
 		template.load_content()
 		return template
+
+	def save_model(self, request, obj, form, change):
+		obj.fix_eols()
+		obj.save()

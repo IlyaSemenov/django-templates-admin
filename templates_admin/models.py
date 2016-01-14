@@ -56,7 +56,22 @@ class Template(models.Model):
 		return self.path[len(self.top_dir)+1:]
 
 	def load_content(self):
-		self.content = open(self.path, 'r').read()
+		self.content = self.read_content()
+
+	def read_content(self):
+		return open(self.path, 'r', newline='').read()  # preserve EOLs
+
+	def fix_eols(self):
+		"""
+		Convert to Unix EOLs unless the original file was Windows encoded.
+		"""
+		old_content = self.read_content()
+		rn_pos = old_content.find('\r\n')
+		if rn_pos >= 0 and rn_pos < old_content.find('\n'):
+			# Do not fix EOLs if the first EOL in the old content was \r\n
+			return
+
+		self.content = self.content.replace('\r\n', '\n')
 
 	def save(self, *args, **kwargs):
 		open(self.path, 'w').write(self.content)
