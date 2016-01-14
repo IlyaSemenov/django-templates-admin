@@ -1,6 +1,7 @@
 import os
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.functional import SimpleLazyObject
 
@@ -50,6 +51,13 @@ class Template(models.Model):
 
 	def __str__(self):
 		return self.path
+
+	def clean(self):
+		try:
+			with open(self.path, 'a'):
+				pass
+		except Exception as e:
+			raise ValidationError(e)
 
 	@property
 	def relative_name(self):
