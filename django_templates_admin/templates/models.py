@@ -6,37 +6,47 @@ from django.db import models
 from django.utils.functional import SimpleLazyObject
 
 
-def _find_templates():
-	if getattr(settings, 'TEMPLATES', None):
-		template_dirs = [d for source in settings.TEMPLATES for d in source.get('DIRS', [])]
-	else:
-		template_dirs = settings.TEMPLATE_DIRS
+class TemplateStorage:
+	def __init__(self):
+		if getattr(settings, 'TEMPLATES', None):
+			template_dirs = [d for source in settings.TEMPLATES for d in source.get('DIRS', [])]
+		else:
+			template_dirs = settings.TEMPLATE_DIRS
 
-	templates = []
-	for top_dir in template_dirs:
-		for root, dirs, files in os.walk(top_dir):
-			for f in files:
-				templates.append(Template(path=os.path.join(root, f), top_dir=top_dir))
-	return templates
+		templates = []
+		template_for_path = {}
+		for top_dir in template_dirs:
+			for walked_dir, subdirs, files in os.walk(top_dir):
+				for f in files:
+					# Example: top_dir=/www/app/templates walked_dir=/www/app/templates/accounts f=login.html
+					path = os.path.join(walked_dir, f)
+					template = Template(path=path, top_dir=top_dir)
+					template_for_path[path] = template
+					templates.append(template)
 
-all_templates = SimpleLazyObject(_find_templates)
+		# TODO: order templates
+
+		self.templates = templates
+		self.template_for_path = template_for_path
+
+templates_storage = SimpleLazyObject(TemplateStorage)
 
 
 class TemplateQuerySet(models.QuerySet):
 	def iterator(self):
-		return all_templates
+		return templates_storage.templates
 
 	def count(self):
-		return len(all_templates)
+		return len(templates_storage.templates)
 
 	def get(self, path):
-		templates = list(filter(lambda t: t.path == path, all_templates))
-		if not templates:
+		try:
+			return templates_storage.template_for_path[path]
+		except KeyError:
 			raise Template.DoesNotExist
-		return templates[0]
 
 	def delete(self):
-		pass
+		raise NotImplementedError
 
 
 class Template(models.Model):
