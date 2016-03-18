@@ -1,3 +1,4 @@
+import hashlib
 import os
 
 from django.conf import settings
@@ -14,20 +15,27 @@ class TemplateStorage:
 			template_dirs = settings.TEMPLATE_DIRS
 
 		templates = []
-		template_for_path = {}
+		template_for_key = {}
 		for top_dir in template_dirs:
 			for walked_dir, subdirs, files in os.walk(top_dir):
 				for f in files:
-					# Example: top_dir=/www/app/templates walked_dir=/www/app/templates/accounts f=login.html
+					# Example:
+					# top_dir = /www/app/templates
+					# walked_dir = /www/app/templates/accounts
+					# f = login.html
+					# path = /www/app/templates/accounts/login.html
+					# relative_path = accounts/login.html
 					path = os.path.join(walked_dir, f)
-					template = Template(path=path, top_dir=top_dir)
-					template_for_path[path] = template
+					relative_path = path[len(top_dir)+1:]
+					key = hashlib.md5(path.encode()).hexdigest()
+					template = Template(key=key, top_dir=top_dir, relative_path=relative_path)
+					template_for_key[key] = template
 					templates.append(template)
 
 		# TODO: order templates
 
 		self.templates = templates
-		self.template_for_path = template_for_path
+		self.template_for_key = template_for_key
 
 templates_storage = SimpleLazyObject(TemplateStorage)
 
@@ -39,9 +47,9 @@ class TemplateQuerySet(models.QuerySet):
 	def count(self):
 		return len(templates_storage.templates)
 
-	def get(self, path):
+	def get(self, key):
 		try:
-			return templates_storage.template_for_path[path]
+			return templates_storage.template_for_key[key]
 		except KeyError:
 			raise Template.DoesNotExist
 
@@ -53,8 +61,9 @@ class Template(models.Model):
 	class Meta:
 		managed = False
 
-	path = models.CharField(max_length=255, primary_key=True, editable=False)
+	key = models.CharField(max_length=32, primary_key=True, editable=False)
 	top_dir = models.CharField("Directory", max_length=255, editable=False)
+	relative_path = models.CharField("Template", max_length=255, editable=False)
 	content = models.TextField(blank=True)
 
 	objects = TemplateQuerySet.as_manager()
@@ -62,16 +71,16 @@ class Template(models.Model):
 	def __str__(self):
 		return self.path
 
+	@property
+	def path(self):
+		return os.path.join(self.top_dir, self.relative_path)
+
 	def clean(self):
 		try:
 			with open(self.path, 'a'):
 				pass
 		except Exception as e:
 			raise ValidationError(e)
-
-	@property
-	def relative_name(self):
-		return self.path[len(self.top_dir)+1:]
 
 	def is_editable(self):
 		return os.access(self.path, os.W_OK)
