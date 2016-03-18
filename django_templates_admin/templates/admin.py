@@ -22,7 +22,8 @@ class TemplateAdmin(admin.ModelAdmin):
 
 	def get_object(self, *args, **kwargs):
 		template = super().get_object(*args, **kwargs)
-		template.load_content()
+		if template:
+			template.load_content()
 		return template
 
 	def save_model(self, request, obj, form, change):
