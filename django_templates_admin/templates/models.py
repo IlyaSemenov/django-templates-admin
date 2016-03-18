@@ -32,7 +32,11 @@ class TemplateStorage:
 					template_for_key[key] = template
 					templates.append(template)
 
-		# TODO: order templates
+		# Order templates by full path, in each folder put files first
+		def prioritize_file(path):
+			s = path.rsplit('/', maxsplit=1)
+			return s[:-1] + [''] + s[-1:]
+		templates.sort(key=lambda t: (t.top_dir, prioritize_file(t.relative_path)))
 
 		self.templates = templates
 		self.template_for_key = template_for_key
