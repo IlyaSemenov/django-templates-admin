@@ -4,7 +4,7 @@ from .models import Template
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
-	list_display = 'get_relative_name', 'top_dir'
+	list_display = 'get_relative_name', 'top_dir', 'is_editable'
 	actions = None
 
 	fields = 'top_dir', 'get_relative_name', 'content'

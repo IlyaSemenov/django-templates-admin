@@ -73,6 +73,11 @@ class Template(models.Model):
 	def relative_name(self):
 		return self.path[len(self.top_dir)+1:]
 
+	def is_editable(self):
+		return os.access(self.path, os.W_OK)
+	is_editable.boolean = True
+	is_editable.short_description = "Editable"
+
 	def load_content(self):
 		self.content = self.read_content()
 
